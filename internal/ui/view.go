@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 
 	"github.com/russ/claudagotchi/internal/poller"
 )
@@ -309,15 +310,14 @@ func wrap(s string, w int) string {
 	return b.String()
 }
 
+// truncate cuts s so that it occupies at most n visible columns, accounting
+// for double-width and zero-width runes. The trailing ellipsis is included
+// in the budget, so the returned string is never wider than n.
 func truncate(s string, n int) string {
 	if n <= 0 {
 		return ""
 	}
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n]) + "…"
+	return runewidth.Truncate(s, n, "…")
 }
 
 func oneline(s string) string {
