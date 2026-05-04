@@ -1,0 +1,18 @@
+# claudagotchi config
+#
+# Copy to ~/.config/claudagotchi/config.toml (or pass via --config).
+# Hosts must resolve through your SSH config with passwordless (key-based) auth,
+# since claudagotchi shells out to `ssh`.
+
+hosts = ["host-a", "host-b"]
+
+# Optional. How often to re-poll each host. Defaults to 3s.
+# poll_interval = "3s"
+
+# Optional. Maximum number of sessions to display per host. Sessions beyond
+# this cap are summarized as "+N more". Defaults to 6.
+# max_sessions = 6
+
+# Optional. Sessions whose last activity is older than this are hidden from
+# the dashboard. Defaults to 1h. Use "0s" to disable.
+# active_window = "1h"

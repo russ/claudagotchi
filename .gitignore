@@ -1,0 +1,14 @@
+/claudagotchi
+/claudagotchi-*
+/dist/
+*.test
+*.out
+.DS_Store
+
+# editor
+.vscode/
+.idea/
+
+# local config
+/claudagotchi.toml
+/.claude/
