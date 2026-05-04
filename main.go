@@ -30,6 +30,7 @@ func run() error {
 	var (
 		cfgPath     = flag.String("config", "", "path to config file (default: search XDG/home/cwd)")
 		once        = flag.Bool("once", false, "poll each host once, print plain text, then exit")
+		preview     = flag.Bool("preview", false, "preview all built-in creature sprites and exit")
 		showVersion = flag.Bool("version", false, "print version and exit")
 	)
 	flag.Usage = func() {
@@ -59,6 +60,10 @@ Config file (TOML):
 		return nil
 	}
 
+	if *preview {
+		return runPreview()
+	}
+
 	cfg, _, err := config.Load(*cfgPath)
 	if err != nil {
 		return err
@@ -75,7 +80,7 @@ Config file (TOML):
 	}
 
 	p := tea.NewProgram(
-		ui.New(cfg.Hosts, cfg.PollInterval.Duration, cfg.MaxSessions, cfg.ActiveWindow.Duration),
+		ui.New(cfg.Hosts, cfg.PollInterval.Duration, cfg.MaxSessions, cfg.ActiveWindow.Duration, cfg.Creatures),
 		tea.WithAltScreen(),
 	)
 	_, err = p.Run()
@@ -170,6 +175,41 @@ func pluralS(n int) string {
 		return ""
 	}
 	return "s"
+}
+
+func runPreview() error {
+	phases := []poller.Phase{
+		poller.PhaseWorking,
+		poller.PhaseWaiting,
+		poller.PhaseIdle,
+		poller.PhaseSleeping,
+	}
+	for _, name := range ui.AvailableCreatures() {
+		c := ui.LookupCreature(name)
+		fmt.Printf("\n=== %s ===\n", name)
+		for _, p := range phases {
+			n := c.FrameCount(p)
+			if n == 0 {
+				continue
+			}
+			fmt.Printf("\n  %s (%d frame", p, n)
+			if n != 1 {
+				fmt.Print("s")
+			}
+			fmt.Println(")")
+			for f := 0; f < n; f++ {
+				art := c.RenderSprite(p, f)
+				for _, line := range strings.Split(art, "\n") {
+					fmt.Printf("    %s\n", line)
+				}
+				if f != n-1 {
+					fmt.Println()
+				}
+			}
+		}
+	}
+	fmt.Println()
+	return nil
 }
 
 func truncate(s string, n int) string {

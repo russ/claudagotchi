@@ -22,6 +22,7 @@ type Model struct {
 	pollInterval time.Duration
 	maxSessions  int
 	activeWindow time.Duration
+	creatures    []string
 	statuses     map[string]poller.Status
 	width        int
 	height       int
@@ -30,9 +31,9 @@ type Model struct {
 }
 
 // New returns a Model configured with the given hosts, poll interval, max
-// sessions to display per host, and the activity window beyond which
-// sessions are hidden.
-func New(hosts []string, pollInterval time.Duration, maxSessions int, activeWindow time.Duration) Model {
+// sessions to display per host, the activity window beyond which sessions
+// are hidden, and the creature roster (empty = all available).
+func New(hosts []string, pollInterval time.Duration, maxSessions int, activeWindow time.Duration, creatures []string) Model {
 	if pollInterval <= 0 {
 		pollInterval = 3 * time.Second
 	}
@@ -44,6 +45,7 @@ func New(hosts []string, pollInterval time.Duration, maxSessions int, activeWind
 		pollInterval: pollInterval,
 		maxSessions:  maxSessions,
 		activeWindow: activeWindow,
+		creatures:    creatures,
 		statuses:     map[string]poller.Status{},
 	}
 }

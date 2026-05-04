@@ -23,6 +23,7 @@ type Config struct {
 	PollInterval Duration `toml:"poll_interval"`
 	MaxSessions  int      `toml:"max_sessions"`
 	ActiveWindow Duration `toml:"active_window"`
+	Creatures    []string `toml:"creatures"`
 }
 
 // Duration is a time.Duration that decodes from a TOML string like "3s".
@@ -94,6 +95,9 @@ func Load(explicit string) (Config, string, error) {
 		}
 		if loaded.ActiveWindow.Duration > 0 {
 			cfg.ActiveWindow = loaded.ActiveWindow
+		}
+		if len(loaded.Creatures) > 0 {
+			cfg.Creatures = loaded.Creatures
 		}
 		return cfg, p, nil
 	}

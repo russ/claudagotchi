@@ -162,7 +162,7 @@ func (m Model) renderHost(host string, panelW int) string {
 			suffix += fmt.Sprintf(" · +%d project%s", hiddenGroups, plural(hiddenGroups))
 		}
 		headerSuffix = helpStyle.Render(suffix)
-		content = m.renderGroupGrid(groups, hiddenGroups, innerW)
+		content = m.renderGroupGrid(host, groups, hiddenGroups, innerW)
 	}
 
 	head := header
@@ -197,7 +197,7 @@ func durLabel(d time.Duration) string {
 }
 
 func renderHostFallback(phase poller.Phase, frame, w int, msg string) string {
-	sprite := RenderSprite(phase, frame)
+	sprite := RenderHostSprite(phase, frame)
 	centered := centerArt(sprite, w)
 	if msg == "" {
 		return centered
@@ -210,7 +210,7 @@ func renderHostFallback(phase poller.Phase, frame, w int, msg string) string {
 	return centered + "\n\n" + centeredMsg
 }
 
-func (m Model) renderGroupGrid(groups []projectGroup, hidden, w int) string {
+func (m Model) renderGroupGrid(host string, groups []projectGroup, hidden, w int) string {
 	cols := w / minCardWidth
 	if cols < 1 {
 		cols = 1
@@ -228,7 +228,7 @@ func (m Model) renderGroupGrid(groups []projectGroup, hidden, w int) string {
 		}
 		cards := make([]string, 0, end-i)
 		for j := i; j < end; j++ {
-			cards = append(cards, m.renderCard(groups[j], cardW))
+			cards = append(cards, m.renderCard(host, groups[j], cardW))
 		}
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, cards...))
 	}
@@ -239,10 +239,14 @@ func (m Model) renderGroupGrid(groups []projectGroup, hidden, w int) string {
 	return out
 }
 
-func (m Model) renderCard(g projectGroup, w int) string {
-	sprite := RenderSprite(g.Phase, m.frame)
+func (m Model) renderCard(host string, g projectGroup, w int) string {
+	creature := PickCreature(host, g.Project, m.creatures)
+	var sprite string
+	if creature != nil {
+		sprite = creature.RenderSprite(g.Phase, m.frame)
+	}
 	if sprite == "" {
-		sprite = RenderSprite(poller.PhaseUnknown, m.frame)
+		sprite = RenderHostSprite(poller.PhaseUnknown, m.frame)
 	}
 	infoW := w - spriteWidth - 2
 	if infoW < 12 {

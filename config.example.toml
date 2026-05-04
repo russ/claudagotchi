@@ -16,3 +16,9 @@ hosts = ["host-a", "host-b"]
 # Optional. Sessions whose last activity is older than this are hidden from
 # the dashboard. Defaults to 1h. Use "0s" to disable.
 # active_window = "1h"
+
+# Optional. Roster of creatures the dashboard may assign to projects. Each
+# project gets a deterministic creature based on a hash of (host, project)
+# so the same project always shows the same pet. Omit or leave empty to use
+# every built-in creature.
+# creatures = ["slime"]
