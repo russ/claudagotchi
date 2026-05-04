@@ -74,9 +74,23 @@ hosts = ["host-a", "host-b"]
 # poll_interval = "3s"   # how often to re-poll each host
 # max_sessions  = 6      # max session avatars per host (extras collapsed to "+N more")
 # active_window = "1h"   # sessions older than this are hidden ("0s" disables)
+# creatures     = ["slime", "cat", ...]  # roster (omit for all built-ins)
 ```
 
-See [`config.example.toml`](config.example.toml).
+For hosts that need explicit SSH overrides, use the detailed `[[host]]` form alongside or instead of the simple list:
+
+```toml
+hosts = ["host-a", "host-b"]    # plain names use ~/.ssh/config
+
+[[host]]
+name          = "weird-box"
+hostname      = "192.168.1.100"
+user          = "deploy"
+port          = 2222
+identity_file = "~/.ssh/id_special"
+```
+
+Both forms are concatenated in declaration order. The simple list is shorthand for `[[host]]` entries that have only a `name`. See [`config.example.toml`](config.example.toml).
 
 You can also pass hosts as positional arguments, which override the config:
 

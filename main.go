@@ -51,6 +51,13 @@ Config file (TOML):
   max_sessions  = 6
   active_window = "1h"
 
+  # For hosts that need overrides:
+  [[host]]
+  name     = "weird-box"
+  hostname = "192.168.1.100"
+  user     = "deploy"
+  port     = 2222
+
 `)
 	}
 	flag.Parse()
@@ -68,8 +75,11 @@ Config file (TOML):
 	if err != nil {
 		return err
 	}
-	if hosts := flag.Args(); len(hosts) > 0 {
-		cfg.Hosts = hosts
+	if names := flag.Args(); len(names) > 0 {
+		cfg.Hosts = make([]poller.HostSpec, len(names))
+		for i, name := range names {
+			cfg.Hosts[i] = poller.HostSpec{Name: name}
+		}
 	}
 	if len(cfg.Hosts) == 0 {
 		return fmt.Errorf("no hosts configured (pass as args or set hosts in config)")
@@ -117,7 +127,7 @@ func groupSessions(ss []poller.Session) []onceGroup {
 	return out
 }
 
-func runOnce(hosts []string, maxSessions int, activeWindow time.Duration) error {
+func runOnce(hosts []poller.HostSpec, maxSessions int, activeWindow time.Duration) error {
 	for _, h := range hosts {
 		s := poller.Poll(context.Background(), h)
 		fmt.Printf("=== %s ===\n", s.Host)

@@ -15,15 +15,20 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+
+	"github.com/russ/claudagotchi/internal/poller"
 )
 
 // Config is the user-facing configuration.
 type Config struct {
-	Hosts        []string `toml:"hosts"`
-	PollInterval Duration `toml:"poll_interval"`
-	MaxSessions  int      `toml:"max_sessions"`
-	ActiveWindow Duration `toml:"active_window"`
-	Creatures    []string `toml:"creatures"`
+	// Hosts is the merged list of hosts, populated from both the simple
+	// `hosts = [...]` shorthand and the detailed `[[host]]` array-of-tables
+	// form. Both are concatenated in declaration order.
+	Hosts        []poller.HostSpec
+	PollInterval Duration
+	MaxSessions  int
+	ActiveWindow Duration
+	Creatures    []string
 }
 
 // Duration is a time.Duration that decodes from a TOML string like "3s".
@@ -66,6 +71,17 @@ func SearchPaths(explicit string) []string {
 	return paths
 }
 
+// rawConfig mirrors the on-disk TOML schema. It separates the two host
+// declaration styles so Load can merge them.
+type rawConfig struct {
+	Hosts        []string          `toml:"hosts"`
+	Host         []poller.HostSpec `toml:"host"`
+	PollInterval Duration          `toml:"poll_interval"`
+	MaxSessions  int               `toml:"max_sessions"`
+	ActiveWindow Duration          `toml:"active_window"`
+	Creatures    []string          `toml:"creatures"`
+}
+
 // Load reads and decodes the first existing config file in priority order,
 // merging it onto the defaults. The path that was loaded (or "" if no file
 // was found) is returned alongside the config. A missing file is not an
@@ -80,24 +96,29 @@ func Load(explicit string) (Config, string, error) {
 			}
 			return cfg, p, fmt.Errorf("read %s: %w", p, err)
 		}
-		var loaded Config
-		if _, err := toml.Decode(string(data), &loaded); err != nil {
+		var raw rawConfig
+		if _, err := toml.Decode(string(data), &raw); err != nil {
 			return cfg, p, fmt.Errorf("parse %s: %w", p, err)
 		}
-		if len(loaded.Hosts) > 0 {
-			cfg.Hosts = loaded.Hosts
+		if len(raw.Hosts) > 0 || len(raw.Host) > 0 {
+			merged := make([]poller.HostSpec, 0, len(raw.Hosts)+len(raw.Host))
+			for _, name := range raw.Hosts {
+				merged = append(merged, poller.HostSpec{Name: name})
+			}
+			merged = append(merged, raw.Host...)
+			cfg.Hosts = merged
 		}
-		if loaded.PollInterval.Duration > 0 {
-			cfg.PollInterval = loaded.PollInterval
+		if raw.PollInterval.Duration > 0 {
+			cfg.PollInterval = raw.PollInterval
 		}
-		if loaded.MaxSessions > 0 {
-			cfg.MaxSessions = loaded.MaxSessions
+		if raw.MaxSessions > 0 {
+			cfg.MaxSessions = raw.MaxSessions
 		}
-		if loaded.ActiveWindow.Duration > 0 {
-			cfg.ActiveWindow = loaded.ActiveWindow
+		if raw.ActiveWindow.Duration > 0 {
+			cfg.ActiveWindow = raw.ActiveWindow
 		}
-		if len(loaded.Creatures) > 0 {
-			cfg.Creatures = loaded.Creatures
+		if len(raw.Creatures) > 0 {
+			cfg.Creatures = raw.Creatures
 		}
 		return cfg, p, nil
 	}

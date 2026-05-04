@@ -4,7 +4,18 @@
 # Hosts must resolve through your SSH config with passwordless (key-based) auth,
 # since claudagotchi shells out to `ssh`.
 
+# Shorthand: just names, all SSH options come from ~/.ssh/config.
 hosts = ["host-a", "host-b"]
+
+# Detailed form: array-of-tables for hosts that need overrides. The two
+# styles are independently optional and concatenated in order.
+#
+# [[host]]
+# name          = "weird-box"           # required, also the SSH alias
+# hostname      = "192.168.1.100"       # → ssh -o HostName=...
+# user          = "deploy"              # → ssh -o User=...
+# port          = 2222                  # → ssh -o Port=...
+# identity_file = "~/.ssh/id_special"   # → ssh -o IdentityFile=...
 
 # Optional. How often to re-poll each host. Defaults to 3s.
 # poll_interval = "3s"

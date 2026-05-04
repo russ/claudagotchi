@@ -9,11 +9,24 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// HostSpec describes how to reach a single host. Name is required and used
+// as the SSH target alias (which may resolve via ~/.ssh/config). The other
+// fields, when non-empty, override the corresponding SSH options via -o
+// flags on the command line.
+type HostSpec struct {
+	Name         string `toml:"name"`
+	Hostname     string `toml:"hostname"`
+	User         string `toml:"user"`
+	Port         int    `toml:"port"`
+	IdentityFile string `toml:"identity_file"`
+}
 
 // probeScript is sent on stdin to a remote `bash -s`. It enumerates the most
 // recently modified top-level session jsonls and emits one SESSION line per
@@ -249,18 +262,34 @@ func parseSessionLine(line string, now int64) (Session, bool) {
 
 // Poll runs the probe against host and returns a populated Status. It never
 // returns an error; failures land in Status.Err.
-func Poll(ctx context.Context, host string) Status {
-	st := Status{Host: host, PolledAt: time.Now()}
+func Poll(ctx context.Context, host HostSpec) Status {
+	st := Status{Host: host.Name, PolledAt: time.Now()}
 	cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(cctx, "ssh",
+
+	args := []string{
 		"-T",
 		"-o", "BatchMode=yes",
 		"-o", "ConnectTimeout=5",
 		"-o", "ControlMaster=auto",
 		"-o", "ControlPath=~/.ssh/cm-%r@%h:%p",
 		"-o", "ControlPersist=60",
-		host, "bash -s")
+	}
+	if host.Hostname != "" {
+		args = append(args, "-o", "HostName="+host.Hostname)
+	}
+	if host.User != "" {
+		args = append(args, "-o", "User="+host.User)
+	}
+	if host.Port > 0 {
+		args = append(args, "-o", fmt.Sprintf("Port=%d", host.Port))
+	}
+	if host.IdentityFile != "" {
+		args = append(args, "-o", "IdentityFile="+host.IdentityFile)
+	}
+	args = append(args, host.Name, "bash -s")
+
+	cmd := exec.CommandContext(cctx, "ssh", args...)
 	cmd.Stdin = strings.NewReader(probeScript)
 	var out, errb bytes.Buffer
 	cmd.Stdout = &out

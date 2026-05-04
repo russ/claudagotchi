@@ -18,7 +18,7 @@ type pollResultMsg poller.Status
 
 // Model is the Bubble Tea model. Construct with New.
 type Model struct {
-	hosts        []string
+	hosts        []poller.HostSpec
 	pollInterval time.Duration
 	maxSessions  int
 	activeWindow time.Duration
@@ -33,7 +33,7 @@ type Model struct {
 // New returns a Model configured with the given hosts, poll interval, max
 // sessions to display per host, the activity window beyond which sessions
 // are hidden, and the creature roster (empty = all available).
-func New(hosts []string, pollInterval time.Duration, maxSessions int, activeWindow time.Duration, creatures []string) Model {
+func New(hosts []poller.HostSpec, pollInterval time.Duration, maxSessions int, activeWindow time.Duration, creatures []string) Model {
 	if pollInterval <= 0 {
 		pollInterval = 3 * time.Second
 	}
@@ -58,7 +58,7 @@ func animCmd() tea.Cmd {
 	return tea.Tick(animationInterval, func(_ time.Time) tea.Msg { return animMsg{} })
 }
 
-func pollCmd(host string) tea.Cmd {
+func pollCmd(host poller.HostSpec) tea.Cmd {
 	return func() tea.Msg {
 		return pollResultMsg(poller.Poll(context.Background(), host))
 	}

@@ -71,7 +71,7 @@ func (m Model) View() string {
 
 	panels := make([]string, 0, n)
 	for _, h := range m.hosts {
-		panels = append(panels, m.renderHost(h, panelW))
+		panels = append(panels, m.renderHost(h.Name, panelW))
 	}
 	row := lipgloss.JoinHorizontal(lipgloss.Top, panels...)
 
